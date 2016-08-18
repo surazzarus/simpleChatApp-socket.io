@@ -7,3 +7,5 @@ Features includes:
 - Users connected or disconnected
 - {user} is typing functionality
 
+You can see how the app looks like after deployed on Herokuapp
+https://publicmsg.herokuapp.com/
