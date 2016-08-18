@@ -5,3 +5,25 @@ body {
 #messageArea{
     display: none;
 }
+
+#errorUser{
+    color: red;
+}
+
+#username{
+    width: 200px;
+}
+#users{
+    color: green;
+}
+
+#chat{
+    height: 400px;
+    width: 100%;
+    overflow: auto;
+    padding: 5px;
+    border: 1px solid #d3d3d3;
+}
+#message{
+    width: 100%;
+}

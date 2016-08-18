@@ -14,8 +14,9 @@
             <div class="col-md-12">
                 <form id="userForm">
                     <div class="form-group">
-                        <label>Enter Username</label>
-                        <input class="form-control" id="username" />
+                        <label>Enter Username :</label>
+                        <div id="errorUser"></div>
+                        <input class="form-control" id="username"/>
                         <br/>
                         <input type="submit" class="btn btn-primary" value="Login" />
                     </div>
@@ -28,19 +29,20 @@
                 <div class="well">
                     <h3>Online Users</h3>
                     <ul class="list-group" id="users">
-
                     </ul>
                 </div>
             </div>
             <div class="col-md-8">
-                <div class="chat" id="chat"></div>
+                <div id="chat"></div>
 
                 <form id="messageForm">
                     <div class="form-group">
                         <label>Enter message</label>
-                        <textarea class="form-control" id="message"></textarea>
+                        <input class="form-control" id="message"/>
                         <br/>
                         <input type="submit" class="btn btn-primary" value="Send Message">
+
+                        <div id="writing"></div>
                     </div>
                 </form>
             </div>
@@ -49,7 +51,7 @@
 
 <script>
     $(function(){
-       var socket = io.connect();
+       var socket = io();
        var $messageForm =  $('#messageForm');
         var $message =  $('#message');
         var $chat =  $('#chat');
@@ -58,6 +60,7 @@
         var $userForm = $('#userForm');
         var $users = $('#users');
         var $username = $('#username');
+        var $errorUser = $('#errorUser');
 
         $messageForm.submit(function(e){
            e.preventDefault(); // this method prevent the form from being submitted
@@ -68,7 +71,18 @@
         });
 
         socket.on('new message', function(data){
-           $chat.append('<div class="well"><strong>' + data.user + '</strong>: '+ data.msg + '</div>')
+            displayMsg(data);
+        });
+
+        function displayMsg(data){
+            $chat.append('<strong>' + data.user + ': </strong>' + data.msg + '<br/>');
+        }
+
+        socket.on('load old msgs', function(docs){
+            // displaying latest msg on bottom
+            for(var i=docs.length-1; i>=0; i--){
+                displayMsg(docs[i]);
+            }
         });
 
         $userForm.submit(function(e){
@@ -77,18 +91,63 @@
                 if(data){
                     $userFormArea.hide();
                     $messageArea.show();
+                    $message.focus();
+                }
+                else{
+                    $errorUser.html('Username already exists.. Try again');
                 }
             });
             $username.val('');
         });
 
-        socket.on('get users', function(data){
-           var html = '';
-            for(i = 0; i < data.length; i++){
-                html += '<li class="list-group-item">' + data[i] + '</li>';
+        socket.on('usernames', function(data){
+           var names = '';
+            for(var i = 0; i < data.length; i++){
+                names += '<li class="list-group-item">' + data[i] + '</li>';
             }
-            $users.html(html);
+            $users.html(names);
         });
+
+        ///// isTyping feature /////
+
+        var typing = false;
+        var timeout = undefined;
+
+        function timeoutFunction() {
+            typing = false;
+            socket.emit("typing", false);
+        }
+
+        $message.keyup(function(e) {
+            if(typing === false) {
+                typing = true;
+                socket.emit('typing', true);
+                clearTimeout(timeout);
+                timeout = setTimeout(timeoutFunction, 3000);
+            }
+        });
+
+        socket.on('is typing', function(data) {
+            if (data.msg) {
+                $('#writing').html('<strong>' + data.user + '</strong>' + " is typing.....");
+            } else {
+                $('#writing').html('');
+            }
+        });
+
+        ///////////////////////////////
+
+        ///// Auto Scroll bottom //////
+
+        function getMessages(){
+            $chat.animate({'scrollTop': $message.position().top });
+        }
+
+        setInterval(function() {
+            getMessages();
+        }, 100);
+
+        ///////////////////////////////
     });
 </script>
 
